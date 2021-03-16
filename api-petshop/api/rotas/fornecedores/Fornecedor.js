@@ -1,4 +1,7 @@
 const TabelaFornecedor = require('./TabelaFornecedor');
+const CampoInvalido = require('../../erros/CampoInvalido');
+const DadosNaoFornecidos = require('../../erros/DadosNaoFornecidos');
+
 class Fornecedor {
     constructor ({id, empresa, email, categoria, dataCriacao, dataAtualizacao, versao}) {
         this.id = id,
@@ -12,6 +15,7 @@ class Fornecedor {
     }
 
     async criar() {
+        this.validar();
         const resultado = await TabelaFornecedor.inserir({
             empresa : this.empresa,
             email : this.email,
@@ -45,9 +49,24 @@ class Fornecedor {
             }
         })
         if (Object.keys(dadosParaAtualizar).length === 0) {
-            throw new Error('Não foram fornecidos dados para atualizar!')
+            throw new DadosNaoFornecidos();
         }
         await TabelaFornecedor.atualizar(this.id, dadosParaAtualizar)
+    }
+
+    remover () {
+        return TabelaFornecedor.remover(this.id);
+    }
+
+    validar() {
+        const campos = ['empresa', 'email', 'categoria']
+
+        campos.forEach(campo => {
+            const valor = this[campo]
+            if (typeof valor !== 'string' || valor.length === 0) {
+                throw new CampoInvalido(campo);
+            }
+        })
     }
 }
 
