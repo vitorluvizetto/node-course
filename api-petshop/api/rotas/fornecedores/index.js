@@ -1,12 +1,16 @@
 const router = require('express').Router();
 const TabelaFornecedor = require('./TabelaFornecedor');
 const Fornecedor = require('./Fornecedor');
+const SerializadorFornecedor = require('../../Serializador').SerializadorFornecedor;
 
 router.get('/', async (request, response) => {
     const results = await TabelaFornecedor.listar();
     response.status(200);
+    const serializador = new SerializadorFornecedor(
+        response.getHeader('Content-Type')
+    )
     response.send(
-        JSON.stringify(results)
+        serializador.serializar(results)
     )
 })
 
@@ -16,7 +20,10 @@ router.post('/', async (request, response, proximo) => {
         const fornecedor = new Fornecedor(dadosRecebidos);
         await fornecedor.criar();
         response.status(201);
-        response.send(JSON.stringify(fornecedor));
+        const serializador = new SerializadorFornecedor(
+            response.getHeader('Content-Type')
+        )
+        response.send(serializador.serializar(fornecedor));
 
     } catch (error) {
         // response.status(400);
@@ -33,7 +40,11 @@ router.get('/:idFornecedor', async (request, response, proximo) => {
         const fornecedor = new Fornecedor({ id: id })
         await fornecedor.carregar();
         response.status(200);
-        response.send(JSON.stringify(fornecedor));
+        const serializador = new SerializadorFornecedor(
+            response.getHeader('Content-Type'),
+            ['email', 'dataCriacao', 'dataAtualizacao', 'versao']
+        )
+        response.send(serializador.serializar(fornecedor));
     } catch (error) {
         proximo(error);
     }

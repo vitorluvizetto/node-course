@@ -6,12 +6,30 @@ const NaoEncontrado = require('./erros/NaoEncontrado');
 const CampoInvalido = require('./erros/CampoInvalido');
 const DadosNaoFornecidos = require('./erros/DadosNaoFornecidos');
 const ValorNaoSuportado = require('./erros/ValorNaoSuportado');
-
+const formatosAceitos = require('./Serializador').formatosAceitos;
+const SerializadorErro = require('./Serializador').SerializadorErro;
 
 const router = require('./rotas/fornecedores');
 
 
 app.use(bodyParser.json());
+
+app.use((request, response, proximo) => {
+    let formatoRequisitado = request.header('Accept');
+
+    if (formatoRequisitado === '*/*') {
+        formatoRequisitado = 'application/json'
+    }
+
+    if (formatosAceitos.indexOf(formatoRequisitado) === -1) {
+        response.status(406);
+        response.end();
+        return
+    }
+
+    response.setHeader('Content-Type', formatoRequisitado);
+    proximo();
+})
 
 app.use('/api/fornecedores', router);
 
@@ -28,8 +46,11 @@ app.use((error, request, response, proximo) => {
         response.status(406)
     }
 
+    const serializador = new SerializadorErro(
+        response.getHeader('Content-Type')
+    )
     response.send(
-        JSON.stringify({
+        serializador.serializar({
             mensagem: error.message,
             id: error.idError
         })
